@@ -1,0 +1,37 @@
+# Import necessary libraries
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, accuracy_score, roc_auc_score
+
+# Extracting relevant features for modeling
+# We'll select read count columns and fold change columns as features
+read_count_columns = [col for col in data_txt.columns if "sample_readcount" in col]
+fold_change_columns = [col for col in data_txt.columns if "log2FC" in col]
+feature_columns = read_count_columns + fold_change_columns
+
+# Target: We'll use the presence of a TF family to indicate whether a gene is likely a TF
+data_txt['TF_Label'] = data_txt['tf_Family'].apply(lambda x: 1 if x != "Others" else 0)
+
+# Prepare feature matrix and target vector
+X = data_txt[feature_columns].fillna(0)  # Fill NaNs with 0 for modeling
+y = data_txt['TF_Label']
+
+# Split into training and test sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Train a Random Forest Classifier
+rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_model.fit(X_train, y_train)
+
+# Predictions
+y_pred = rf_model.predict(X_test)
+y_pred_proba = rf_model.predict_proba(X_test)[:, 1]  # Probability estimates for ROC curve
+
+# Evaluation
+accuracy = accuracy_score(y_test, y_pred)
+roc_auc = roc_auc_score(y_test, y_pred_proba)
+classification_rep = classification_report(y_test, y_pred)
+
+accuracy, roc_auc, classification_rep
+
+
